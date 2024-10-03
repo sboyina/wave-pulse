@@ -100,7 +100,22 @@ export const Network = (props: Props) => {
         setSelectedKeys(value)
     }
     const selectedValue = React.useMemo(
-        () => Array.from(selectedKeys).join(", ").replaceAll("_", " "),
+        () => {
+            if(selectedKeys.size === allOptions.length)
+            {
+              return ['All']
+            }
+            else if(selectedKeys.size > 1 && selectedKeys.size != allOptions.length){
+              return ['Custom Levels']
+            }
+            else if(selectedKeys.has('hide all'))
+            {
+              selectedKeys.clear()
+              return ['Hide All']
+            }
+            return Array.from(selectedKeys).join(", ").replaceAll("_", " ")
+          }
+      ,
         [selectedKeys]
     );
     const itemonPressCallback = (option: string) => {
