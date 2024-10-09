@@ -49,7 +49,6 @@ export default function PulsePage({ params }: { params: { section: string } } ) 
   const onselectBreadCrumbCallback = useCallback((props:any) => {
    setSelectedWidget(props);
   },[])
-  // console.log('element trees length', typeof(componentTree));
   return (
     <div className="w-full h-full flex flex-col">
       {isConnected ? 

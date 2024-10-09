@@ -6,6 +6,7 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "r
 import { UIAgentContext, useAppInfo, useComponentTree, useConsole, useNetworkRequests, usePlatformInfo, useStorageEntries } from "@/hooks/hooks";
 import { DeleteIcon } from "@nextui-org/shared-icons";
 
+
 export type Props = {
     root: WidgetNode,
     isSelected?: (n : WidgetNode) => boolean,
@@ -28,7 +29,7 @@ export const ComponentNode = (props: Props) => {
     }, [e, collapse]);
     const onSelect = useCallback(() => {
         props.onSelect && props.onSelect(e,props.path);
-        setSelected(!selected);
+        // setSelected(!selected);
     }, [e, props.path,props.onSelect, selected, setSelected]);
     const onHover = useCallback((event: any) => {
         event.stopPropagation();
@@ -36,6 +37,7 @@ export const ComponentNode = (props: Props) => {
     }, [e]);
     useEffect(() => {
         const isSelected = !!(props.isSelected && props.isSelected(e));
+
         setSelected((oldValue) => {
             if (!oldValue && isSelected) {
                 onSelect();
@@ -63,7 +65,7 @@ export const ComponentNode = (props: Props) => {
     const hasChildren = e.children && e.children.length > 0;
     return e ? (
 
-                <div key={e.id + '' + (!!e.selected)} className="text-xs flex flex-col">
+                <div key={e.id + '' + (!!e.selected)} className="text-xs flex flex-col" >
                     <div 
                     className={
                             "text-sky-800 cursor-pointer hover:bg-slate-200 flex flex-row align-middle " +
@@ -114,6 +116,7 @@ export const ComponentNode = (props: Props) => {
 };
 
 export const ElementTree = (props: Props) => {
+   
     const uiAgent = useContext(UIAgentContext);
     const [styles, setStyles] = useState({} as any);
     const [properties, setProperties] = useState([] as any);
