@@ -15,6 +15,7 @@ import { ElementTree } from "./element-tree";
 import { WidgetNode } from "@wavemaker/wavepulse-agent/src/types";
 import {BreadcrumbsComponent} from "@/components/breadcrumbs";
 import { TimeLine } from "./timeline";
+import {Session} from './session'
 
 export default function PulsePage({ params }: { params: { section: string } } ) {
 
@@ -33,7 +34,7 @@ export default function PulsePage({ params }: { params: { section: string } } ) 
   const [isConnected, setIsConnected] = useState(false);
   const [selectedWidget, setSelectedWidget] = useState<WidgetNode>(null as any);
   const [breadcrumbData, setBreadcrumbData]=useState<WidgetNode[]>();    //should get props.path into this page
-
+  const [sessionDataArr, setSessionDataArr] = useState([]);
 
   useEffect(() => {
     uiAgent.onConnect(() => {
@@ -49,6 +50,15 @@ export default function PulsePage({ params }: { params: { section: string } } ) 
   const onselectBreadCrumbCallback = useCallback((props:any) => {
    setSelectedWidget(props);
   },[])
+
+  //here
+  useEffect(() => {
+    uiAgent.listSessionData().then((data) => {
+        setSessionDataArr(data);
+    });
+}, []);
+
+// console.log('sessiondataarray', sessionDataArr);
   return (
     <div className="w-full h-full flex flex-col">
       {isConnected ? 
@@ -94,6 +104,9 @@ export default function PulsePage({ params }: { params: { section: string } } ) 
           <Tab key="info" title="Info">
             <Info appInfo={appInfo} platformInfo={platformInfo}></Info> 
           </Tab>
+          <Tab key="session" title="Session">
+            <Session sessionData={sessionDataArr}></Session>
+          </Tab>
         </Tabs>) : 
         null }
         {isConnected ? null : (
@@ -110,7 +123,8 @@ export default function PulsePage({ params }: { params: { section: string } } ) 
           </span>
         </div>
         <div className="flex flex-row content-center">
-          {uiAgent.isConnected ? (<div className="align-end cursor-pointer mr-4" onClick={() => {
+          {uiAgent.isConnected ? (
+            <div className="align-end cursor-pointer mr-4" onClick={() => {
             setIsSaveDataOpen(true);
           }}>
             <SaveDataIcon color="#666" width={20} height={20}></SaveDataIcon>
