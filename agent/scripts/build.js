@@ -3,6 +3,12 @@ const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');
 const execa = require('execa');
 
+const execaOptions = {
+    stdin: process.stdin,
+    stdio: process.stdio,
+    stdout: process.stdout,
+    stderr: process.stderr
+};
 
 const projectDir = '.';
 
@@ -23,17 +29,12 @@ async function postBuild(runtimeVersion) {
     packageData.exports = {
       "./": "./"
     };
+    packageData.scripts = {}; 
     writeFileSync(`${projectDir}/dist/module/package.json`, JSON.stringify(packageData, null, 2))
     await updatePackageVersion(`${projectDir}/dist/module/package.json`, 'version', runtimeVersion);
     console.log('Post Build successful!!!');
 }
 
-async function prepareNpmPackages() {
-    copySync(`${projectDir}/dist/module`, `${projectDir}/dist/npm-packages/app-rn-runtime`, {
-        filter: p => !p.startsWith('/node_modules/')
-    });
-    await execa('tar', ['-czf', 'dist/npm-packages/wavepulse-agent.tar.gz', '-C', 'dist/npm-packages', 'app-rn-runtime']);
-}
 
 async function pushToLocalRepo() {
     writeFileSync(`${projectDir}/dist/new-build`, '' + Date.now);
@@ -46,19 +47,26 @@ async function pushToLocalRepo() {
 yargs(hideBin(process.argv)).command('post-build',
     'to run post processing after project build',
     (yargs) => {
-        yargs.option('runtimeVersion', {
+        yargs.option('ver', {
             describe: 'version number',
             type: 'string',
-            default: '1.0.0-dev'
+            default: '1.0.0-dev-7'
         }).option('production', {
             describe: 'to perform a production build',
             type: 'boolean',
             default: false
         });
     }, (argv) => {
-        postBuild(argv.runtimeVersion).then(() => {
+        postBuild(argv.ver).then(() => {
             if (argv.production) {
-                return prepareNpmPackages();
+                return execa('npm', [
+                    'publish', 
+                    '--access=public',
+                    '--tag=dev'
+                ], {
+                    ...execaOptions,
+                    cwd: `${projectDir}/dist/module`
+                });
             } else {
                 return pushToLocalRepo();
             }

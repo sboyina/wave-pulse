@@ -1,7 +1,7 @@
 "use client";
 
 import { UIAgentContext, useAppInfo, useComponentTree, useConsole, useNetworkRequests, usePlatformInfo, useStorageEntries, useTimelineLog } from "@/hooks/hooks";
-import { Tabs, Tab, Card, CardBody, Button } from "@nextui-org/react";
+import { Tabs, Tab, Button, Input, DropdownMenu, DropdownItem, Dropdown, DropdownTrigger, ButtonGroup } from "@nextui-org/react";
 import { useRouter } from "next/navigation";
 import { useContext, useState, useEffect , useMemo, useCallback} from "react";
 import { Info } from "./info";
@@ -15,7 +15,20 @@ import { ElementTree } from "./element-tree";
 import { WidgetNode } from "@wavemaker/wavepulse-agent/src/types";
 import {BreadcrumbsComponent} from "@/components/breadcrumbs";
 import { TimeLine } from "./timeline";
-import {Session} from './session'
+import {Session} from './session';
+import QRCode from "react-qr-code";
+import { ChevronDownIcon } from "@nextui-org/shared-icons";
+
+const connectOptions = {
+  mobile: {
+    label: 'Connect to APK or IPA',
+    description: 'Connect to a WaveMaker React Native APK or IPA.'
+  },
+  webpreview: {
+    label: 'Connect to Web Preview',
+    description: 'Connect to a WaveMaker React Native web preview.'
+  }
+};
 
 export default function PulsePage({ params }: { params: { section: string } } ) {
 
@@ -25,7 +38,7 @@ export default function PulsePage({ params }: { params: { section: string } } ) 
   const platformInfo = usePlatformInfo();
   const {requests, clearRequests} = useNetworkRequests();
   const {timelineLogs, clearTimelineLogs} = useTimelineLog();
-  const entries = useStorageEntries();
+  const {storage, refreshStorage} = useStorageEntries();
   const {logs, clearLogs} = useConsole();
   const {componentTree, refreshComponentTree, highlight} = useComponentTree();
   const [isSettingsOpened, setIsSettingsOpen] = useState(false);
@@ -33,8 +46,16 @@ export default function PulsePage({ params }: { params: { section: string } } ) 
   const [selected, setSelected] = useState(params.section);
   const [isConnected, setIsConnected] = useState(false);
   const [selectedWidget, setSelectedWidget] = useState<WidgetNode>(null as any);
-  const [breadcrumbData, setBreadcrumbData]=useState<WidgetNode[]>();    //should get props.path into this page
+  const [breadcrumbData, setBreadcrumbData]=useState<WidgetNode[]>();
+  //should get props.path into this page
   const [sessionDataArr, setSessionDataArr] = useState([]);
+  const [appId, setAppId] = useState(localStorage.getItem('wavepulse.lastopenedapp.id') || 'com.application.id');   //should get props.path into this page
+  const [url, setUrl] = useState('');
+  const [selectedConnectOption, setSelectedConnectOption] = useState(['mobile']);
+  useEffect(() => {
+    appId && uiAgent.getWavepulseUrl(appId).then(url => setUrl(url));
+    localStorage.setItem('wavepulse.lastopenedapp.id', appId);
+  }, [appId]);
 
   useEffect(() => {
     uiAgent.onConnect(() => {
@@ -95,11 +116,11 @@ export default function PulsePage({ params }: { params: { section: string } } ) 
           <Tab key="timeline" title="Timeline">
             <TimeLine timelineLogs={timelineLogs} clearTimelineLogs={clearTimelineLogs}></TimeLine>
           </Tab>
-          <Tab key="performance" title="Performance">
+          {/* <Tab key="performance" title="Performance">
             Performance is under construction.
-          </Tab>
+          </Tab> */}
           <Tab key="storage" title="Storage">
-            <Storage data={entries}></Storage>
+            <Storage data={storage} refreshStorage={refreshStorage}></Storage>
           </Tab>
           <Tab key="info" title="Info">
             <Info appInfo={appInfo} platformInfo={platformInfo}></Info> 
@@ -110,8 +131,77 @@ export default function PulsePage({ params }: { params: { section: string } } ) 
         </Tabs>) : 
         null }
         {isConnected ? null : (
-          <div className="flex flex-1 justify-center content-center  flex-wrap">
+          <div 
+            className="flex flex-1 flex-col justify-center content-center items-center flex-wrap">
             <div className="lds-ripple"><div></div><div></div></div>
+                <ButtonGroup>
+                  <Button 
+                    style={{width: 360}}
+                    variant="bordered">
+                      {(connectOptions as any)[selectedConnectOption[0]].label}
+                  </Button>
+                <Dropdown>
+                  <DropdownTrigger>
+                      <Button isIconOnly>
+                        <ChevronDownIcon />
+                      </Button>
+                  </DropdownTrigger>
+                  <DropdownMenu
+                    disallowEmptySelection
+                    selectedKeys={selectedConnectOption}
+                    selectionMode="single"
+                    className="max-w-[300px]"
+                    onSelectionChange={(keys) => {
+                      setSelectedConnectOption([keys.currentKey || '']);
+                    }}
+                  >
+                  <DropdownItem key="mobile" description={connectOptions.mobile.description}>
+                    {connectOptions.mobile.label}
+                  </DropdownItem>
+                  <DropdownItem key="webpreview" description={connectOptions.webpreview.description}>
+                    {connectOptions.webpreview.label}
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </ButtonGroup>
+            {
+              selectedConnectOption[0] === 'mobile' ? (<div style={{minHeight: 600}}
+                className="flex flex-col content-center items-center flex-wrap">
+                <div className="p-2 text-sm" style={{width: 400}}>
+                  <div className="text-sm text-gray-400 ">{"1) Enter the Application Id below. Application Id is available in Export React Zip dialog in Studio."}</div>
+                </div>
+                <div className="p-2" style={{width: 400}}>
+                  <Input type="text" defaultValue={appId} className="w-full" placeholder="Ex: com.application.id" onChange={(event) => setAppId(event.target.value)}/>
+                </div>
+                <div className="p-2 text-sm" style={{width: 400}}>
+                  <div className="text-sm text-gray-400">{"2) Using your phone, scan the below QR code, which contains url."}</div>
+                </div>
+                <div className="p-2">
+                  <QRCode value={url || ''}/>
+                </div>
+                <div className="p-2">
+                  <a className="text-sm break-all w-full underline text-center" href={url}>Copy this link</a>
+                </div>
+                <div className="p-2" style={{width: 400}}>
+                  <div className="text-sm text-gray-400">{"3) When the url is opened in phone web browser, App that has the above application id will be opened."}</div>
+                </div>
+                {/* <div className="p-2" style={{width: 400}}>
+                  <div className="text-sm">{"4) Message is shown when the app is connected to WavePulse."}</div>
+                </div> */}
+              </div>) : null
+            }
+            {
+              selectedConnectOption[0] === 'webpreview' ? (<div style={{minHeight: 600}} 
+                className="flex flex-col content-center items-center flex-wrap">
+                <div className="p-2 text-sm" style={{width: 400}}>
+                  <div className="text-sm text-gray-400 ">{"1) In the browser tab where app is running, open developer console."}</div>
+                </div>
+                <div className="p-2 text-sm" style={{width: 400}}>
+                  <div className="text-sm text-gray-400">{"2) Execute the below code in the developer console."}</div>
+                </div>
+                <pre className="text-black text-sm">{`wm.App.tryToconnectWavepulse('${location.origin}');`}</pre>
+              </div>) : null
+            }
           </div>
         )}
       <SaveDataDialog isOpen={isSaveDataOpened} onClose={() => setIsSaveDataOpen(false)}></SaveDataDialog>

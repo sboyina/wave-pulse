@@ -6,7 +6,8 @@
   "scripts": {
     "test": "npm run build && jasmine",
     "build": "tsc && node ./scripts/build.js post-build",
-    "start": "npm run build && node ./build"
+    "start": "npm run build && node ./build",
+    "publish": "tsc && node ./scripts/build.js post-build --production=true"
   },
   "author": "",
   "license": "ISC",

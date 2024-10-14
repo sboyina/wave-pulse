@@ -40,6 +40,11 @@ export const useConsole = () => {
     }, []);
     useEffect(() => {
         uiAgent.currentSessionData.logs = logs;
+        (window as any).remoteEvaL = (expr: string) => {
+            uiAgent.invoke(CALLS.EXPRESSION.EVAL, [{expr}]).then((data) => {
+                console.log(`Eval: ${expr} => ${JSON.stringify(data)}`);
+            });
+        };
     }, [logs]);
     return {logs, clearLogs};
 };
@@ -66,19 +71,22 @@ export const useAppInfo = () => {
 export const useStorageEntries = () => {
     const uiAgent = useContext(UIAgentContext);
     const [storage, setStorage] = useState({});
-    useEffect(() => {
-        setStorage(uiAgent.sessionData.storage || {});
-    }, [uiAgent.sessionData]);
-    useEffect(() => {
+    const refreshStorage = useCallback(() => {
         uiAgent.invoke(CALLS.STORAGE.GET_ALL, [])
         .then((args: any) => {
             setStorage(args);
         });
+    }, [storage]);
+    useEffect(() => {
+        setStorage(uiAgent.sessionData.storage || {});
+    }, [uiAgent.sessionData]);
+    useEffect(() => {
+        refreshStorage();
     }, []);
     useEffect(() => {
         uiAgent.currentSessionData.storage = storage;
     }, [storage]);
-    return storage;
+    return {storage, refreshStorage};
 };
 
 export const usePlatformInfo = () => {
@@ -155,9 +163,9 @@ export const useNetworkRequests = () => {
 
 export const useComponentTree = () => {
     const uiAgent = useContext(UIAgentContext);
-    const [componentTree, setComponentTree] = useState([] as any);
+    const [componentTree, setComponentTree] = useState(null as any);
     useEffect(() => {
-        setComponentTree(uiAgent.sessionData.componentTree || []);
+        setComponentTree(uiAgent.sessionData.componentTree || null);
     }, [uiAgent.sessionData]);
     const highlight = useCallback((widetId: string) => {
         uiAgent.invoke(CALLS.WIDGET.HIGHLIGHT, [widetId]);

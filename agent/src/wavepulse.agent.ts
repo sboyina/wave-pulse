@@ -36,10 +36,14 @@ function wrapConsole() {
     const _console = console as ConsoleType;
     const prepareLogFn = (logType: string, original: Function) => {
         return function() {
+            let args = [...arguments]
+            if (logType === 'error' && arguments[0].stack) {
+                args.splice(0, 1, arguments[0].stack.toString());
+            }
             wavePulseAgent && wavePulseAgent.notify(EVENTS.CONSOLE.LOG, 'event', [{
                 type: logType, 
                 date: Date.now(), 
-                message: Array.from(arguments)
+                message: Array.from(args)
             }]);
             original.call(_console, ...arguments);
         }
@@ -164,7 +168,7 @@ function listenServiceCalls() {
 
 function buildComponentTree(componentNode: any) {
     return {
-        tagName: componentNode.instance.constructor.name,
+        tagName: componentNode.instance.props.cname || componentNode.instance.constructor.name,
         name: componentNode.instance.props.name,
         id: componentNode.id,
         children: componentNode.children.map((c: any) => buildComponentTree(c))
@@ -172,16 +176,14 @@ function buildComponentTree(componentNode: any) {
 }
 
 function getComponentTree() {
-    const activePage = (handler as any).activePage;
-    const pageIns: any = Object.values(activePage.Widgets)
+    const pageIns: any = Object.values(currentPage.Widgets)
         .map((w: any) => w.componentNode)
-        .find((w: any) => w.instance.constructor.name === 'WmPage');
-    return buildComponentTree(pageIns);
+        .find((w: any) => w?.instance?.props?.cname === 'WmPage');
+    return pageIns && buildComponentTree(pageIns);
 }
 
 function getComponentById(id: string) {
-    const activePage = (handler as any).activePage;
-    return (Object.values(activePage.Widgets)
+    return (Object.values(currentPage.Widgets)
         .find((w: any) => w.componentNode.id === id) as any);
 }
 
@@ -277,7 +279,13 @@ function bindCalls() {
         };
     });
     wavePulseAgent.onInvoke(CALLS.WIDGET.TREE, (args) => {
-        return Promise.resolve(getComponentTree());
+        let result = null as any;
+        try {
+            result = getComponentTree();
+        } catch(e) {
+            console.error((e as any).stack.toString());
+        }
+        return Promise.resolve(result);
     });
 }
 

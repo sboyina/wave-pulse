@@ -87,6 +87,10 @@ export class UIAgent extends Agent {
         });
     }
 
+    public getWavepulseUrl(appId: string) {
+        return axios.get(`${this.httpurl}/api/service/url?appId=${appId}`).then(res => res.data);
+    }
+
     saveSessionData(name: string) {
         const form = new FormData();
         const dataToSave = {

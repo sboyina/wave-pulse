@@ -147,14 +147,14 @@ export const ElementTree = (props: Props) => {
                         </Button>
                     </div>
                 </div>
-                    <ComponentNode 
+                    {props.root ? (<ComponentNode 
                         root={props.root} 
                         isSelected={props.isSelected} 
                         path={[]} 
                         depth={0} 
                         onSelect={onSelect} 
                         onHover={onHover}
-                        isRoot={true}></ComponentNode>
+                        isRoot={true}></ComponentNode>) : null}
                 </div>        
                 <div className="h-full bg-zinc-100" style={{width: 400}}>
                     <Tabs aria-label="Options" radius="none" variant="underlined" classNames={{
