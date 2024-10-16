@@ -1,12 +1,16 @@
 import { UIAgentContext } from "@/hooks/hooks";
-import { Modal, ModalHeader, ModalContent, ModalBody, ModalFooter, Button, useDisclosure, Select, SelectItem, Switch } from "@nextui-org/react";
+import { Modal, ModalHeader, ModalContent, ModalBody, ModalFooter, Button, useDisclosure, Select, SelectItem, Switch, Input } from "@nextui-org/react";
 import { useCallback, useContext, useEffect, useState } from "react";
+import {IconImport} from '@/components/icons';
+import axios from "axios";
+
 
 export const Settings = (props: {
     isOpen?: boolean,
     onOpen?: Function,
     onClose?: Function
 }) => {
+   
     const {isOpen, onOpen, onOpenChange, } = useDisclosure();
     const uiAgent = useContext(UIAgentContext);
     const [isConnected, setIsConnected] = useState(uiAgent.isConnected);
@@ -35,6 +39,37 @@ export const Settings = (props: {
     useEffect(() => {
         setIsConnected(uiAgent.isConnected);
     }, [uiAgent.isConnected]);
+
+    const handleFileSelect = async (e:any) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload =async  function(event:any) {
+            const formData = new FormData();
+            formData.append('name', e.target.files[0].name);
+            formData.append('content', JSON.stringify(event.target.result));
+            console.log('JSON.stringify(event.target.result)',JSON.stringify(event.target.result));
+        try {
+            const response = await axios.post(`/api/session/data/${e.target.files[0].name}`, formData, {
+              headers: {
+                'Content-Type': 'multipart/form-data'
+              }
+            });
+        
+            if (response.status === 200) {
+              console.log('File uploaded successfully:', response.data);
+            } else {
+              console.error('Upload failed');
+            }
+          } catch (error) {
+            console.error('Error uploading file:', error);
+          }
+        };
+      
+        reader.readAsText(file);
+
+                
+    }
+
     return (
         <Modal size='4xl' isOpen={isOpen} onOpenChange={onOpenChange}>
            <ModalContent>
@@ -69,6 +104,20 @@ export const Settings = (props: {
                             </SelectItem>
                             ))}
                         </Select>
+                        </div>
+
+
+
+                        <div className=" flex items-center py-1">
+                            <input
+                                type="file"
+                                onChange={(event)=>handleFileSelect(event)}
+                                style={{ display: 'none' }}
+                                id="fileInput"
+                            />
+                            <label htmlFor="fileInput" className=" cursor-pointer">
+                                <IconImport size={36} color="black"  />
+                            </label>
                         </div>
                     </div>
                 </ModalBody>
