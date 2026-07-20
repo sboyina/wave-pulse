@@ -34,7 +34,7 @@
 		"@react-aria/ssr": "3.9.4",
 		"@react-aria/visually-hidden": "3.8.12",
 		"@wavemaker/wavepulse-agent": "1.0.9",
-		"adm-zip": "^0.5.16",
+		"adm-zip": "^0.5.18",
 		"axios": "^1.7.5",
 		"clsx": "2.1.1",
 		"d3-scale": "^4.0.2",
